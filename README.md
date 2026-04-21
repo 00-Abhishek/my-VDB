@@ -1,146 +1,314 @@
-bash '''
-MyAI
-MyAI is a lightweight vector search and retrieval system built in Python. It combines classical nearest neighbor algorithms with modern embedding-based retrieval, all exposed through a simple web interface and REST API.
-The project is designed to be minimal, transparent, and easy to experiment with — no heavy dependencies, no hidden abstractions.
+# MyAI — Build a Vector Database from Scratch in Python
 
-Overview
-MyAI provides:
+A fully working **Vector Database** built from scratch in Python with a web UI.  
+Implements **HNSW**, **KD-Tree**, and **Brute Force** search algorithms side-by-side, plus a **RAG pipeline** powered by a local LLM via Ollama.
 
+> Built as an educational project to show how production vector databases like Pinecone, Weaviate, and Chroma actually work under the hood — no heavy dependencies, just Python standard library.
 
-Multiple vector search strategies (exact + approximate)
+---
 
+## What This Project Does
 
-Interactive browser-based visualization
+| Feature | Description |
+|---|---|
+| **3 Search Algorithms** | HNSW (production-grade), KD-Tree, Brute Force — run all three and compare speed |
+| **3 Distance Metrics** | Cosine similarity, Euclidean distance, Manhattan distance |
+| **16D Demo Vectors** | 20 pre-loaded semantic vectors across 4 categories (CS, Math, Food, Sports) |
+| **2D PCA Scatter Plot** | Live visualization of semantic space — watch clusters form |
+| **Real Document Embedding** | Paste any text → Ollama embeds it with `nomic-embed-text` (768D) |
+| **RAG Pipeline** | Ask questions about your documents → HNSW retrieves context → local LLM answers |
+| **Full REST API** | CRUD endpoints: insert, delete, search, benchmark, hnsw-info |
+| **Zero Dependencies** | Runs on Python standard library only — no pip packages needed |
 
+---
 
-Local document ingestion and retrieval (RAG)
+## How It Works
 
+```
+Your Text
+    │
+    ▼
+Ollama (nomic-embed-text)          ← converts text to a 768-dimensional vector
+    │
+    ▼
+HNSW Index (Python)                ← indexes the vector in a multilayer graph
+    │
+    ▼
+Semantic Search                    ← finds nearest neighbors in vector space
+    │
+    ▼
+Ollama (llama3.2)                  ← reads retrieved chunks, generates an answer
+    │
+    ▼
+Answer
+```
 
-A clean, dependency-light Python backend
+**HNSW (Hierarchical Navigable Small World)** is the same algorithm used by Pinecone, Weaviate, Chroma, and Milvus. It builds a multilayer graph where each layer is progressively sparser — searches start at the top layer and zoom in, achieving O(log N) complexity instead of O(N) for brute force.
 
+---
 
-It is suitable for learning, experimentation, and small-scale local deployments.
+## Prerequisites
 
-Features
-AreaDetailsSearch algorithmsHNSW, KD-Tree, Brute ForceDistance metricsCosine, Euclidean, ManhattanVector dataPreloaded 16D vectors across multiple domainsVisualizationPCA-based scatter plot in browserDocument pipelineChunk → Embed → Store → RetrieveRAGRetrieval + generation via local LLMAPIREST endpoints for all core operations
+You need **2 things** installed on your machine:
 
-Tech Stack
+1. **Python 3.11+** (check with `python --version`)
+2. **Ollama** (runs the local AI models — optional but recommended)
 
+No other Python packages are required.
 
-Backend: Python (standard library only)
+---
 
+## Quick Start (5 Minutes)
 
-Frontend: Vanilla HTML + JS
+### Step 1 — Verify Python
 
-
-Embeddings & LLM: Ollama (local)
-
-
-
-Requirements
-
-
-Python 3.11+
-
-
-(Optional) Ollama for embeddings and generation
-
-
-No external Python packages are required.
-
-Quick Start
-1. Verify Python
+```powershell
 python --version
+```
 
-2. Install Ollama (optional but recommended)
-Download from: https://ollama.com
-Pull required models:
-ollama pull nomic-embed-textollama pull llama3.2
+You should see `Python 3.11.x` or higher.
 
-3. Run the application
-cd myaipython app.py
-Server starts at:
+---
+
+### Step 2 — Install Ollama (Optional but Recommended)
+
+Ollama runs the embedding and language models locally on your machine.
+
+1. Go to **https://ollama.com** and click **Download**
+2. Run the installer
+3. Ollama starts automatically in the system tray
+4. Open **PowerShell** and pull the two required models:
+
+```powershell
+ollama pull nomic-embed-text
+```
+*(~274 MB — the embedding model)*
+
+```powershell
+ollama pull llama3.2
+```
+*(~2 GB — the language model)*
+
+5. Verify Ollama is running:
+```powershell
+ollama list
+```
+
+You should see both models listed.
+
+> **Minimum specs:** 8GB RAM recommended. The models use ~3GB total.
+
+---
+
+### Step 3 — Clone or Download the Repository
+
+```powershell
+git clone https://github.com/YOUR_USERNAME/MyAI.git
+cd MyAI/myai
+```
+
+Or manually download the files and navigate to the `myai` folder.
+
+---
+
+### Step 4 — Run the Server
+
+```powershell
+python app.py
+```
+
+You should see:
+
+```
+=== MyAI Vector Database ===
 http://localhost:8080
+20 demo vectors | 16 dims | HNSW+KD-Tree+BruteForce
+Ollama: ONLINE
+  embed model: nomic-embed-text  gen model: llama3.2
+```
 
-4. Open in browser
+**Open your browser** and go to:
+```
 http://localhost:8080
+```
 
-Project Structure
-myai/├── app.py├── index.html├── README.md├── requirements.txt└── docs/    ├── API.md    └── ARCHITECTURE.md
+Done! 🎉
 
-Architecture
+---
 
+## Using the Application
 
-app.py
-Hosts the HTTP server and all API endpoints
+### Tab 1: Search (Demo Vectors)
 
+- Type any concept in the search box: `binary tree`, `sushi`, `basketball`, `calculus`
+- Choose your algorithm: **HNSW**, **KD-Tree**, or **Brute Force**
+- Choose distance metric: **Cosine**, **Euclidean**, or **Manhattan**
+- Click **⚡ SEARCH** — results appear with distances, the matching point glows on the scatter plot
+- Click **▶ COMPARE ALL ALGOS** to run all 3 algorithms and compare their speed
 
-VectorDB
-Handles in-memory vectors and search algorithms
+**The scatter plot** shows all 20 vectors projected to 2D using PCA. Notice how the 4 semantic categories (CS, Math, Food, Sports) form distinct clusters — this is what "semantic similarity" looks like visually.
 
+### Tab 2: Documents (Real Embeddings)
 
-DocumentDB
-Stores embedded document chunks for retrieval
+This uses Ollama to generate **real 768-dimensional embeddings** from any text.
 
+1. Type a title (e.g., `Operating Systems Notes`)
+2. Paste any text — lecture notes, textbook paragraphs, Wikipedia articles
+3. Click **⚡ EMBED & INSERT**
+4. Long documents are automatically split into overlapping 250-word chunks
+5. Each chunk gets its own embedding and is stored in a separate HNSW index
 
-OllamaClient
-Interfaces with local Ollama models
+### Tab 3: Ask AI (RAG Pipeline)
 
+1. Make sure you have inserted some documents in Tab 2 first
+2. Type a question about your documents
+3. Click **🤖 ASK AI**
 
-index.html
-Frontend UI + visualization logic
+What happens behind the scenes:
+```
+1. Your question → embedded with nomic-embed-text (768D vector)
+2. HNSW search → finds 3 most semantically similar chunks
+3. Retrieved chunks → sent as context to llama3.2
+4. llama3.2 → generates an answer based only on your documents
+```
 
+The answer streams in with a typewriter effect. Click the **context chips** to see exactly which chunks the AI used.
 
+---
 
-API Endpoints
-MethodEndpointDescriptionGET/searchQuery vector searchPOST/insertInsert vectorDELETE/delete/:idDelete vectorGET/itemsList vectorsGET/benchmarkCompare algorithmsGET/hnsw-infoInspect HNSW structurePOST/doc/insertAdd documentGET/doc/listList document chunksDELETE/doc/delete/:idDelete chunkPOST/doc/searchRetrieve chunksPOST/doc/askRAG queryGET/statusSystem status
-Detailed specs: docs/API.md
+## REST API Reference
 
-Example Usage
-Vector search
+The server exposes a full REST API at `http://localhost:8080`.
+
+### Demo Vector Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/search?v=f1,f2,...&k=5&metric=cosine&algo=hnsw` | K-NN search |
+| `POST` | `/insert` | Insert a demo vector |
+| `DELETE` | `/delete/:id` | Delete by ID |
+| `GET` | `/items` | List all demo vectors |
+| `GET` | `/benchmark?v=...&k=5&metric=cosine` | Compare all 3 algorithms |
+| `GET` | `/hnsw-info` | HNSW graph structure and layer stats |
+| `GET` | `/status` | Database statistics |
+
+### Document & RAG Endpoints
+
+| Method | Endpoint | Body | Description |
+|---|---|---|---|
+| `POST` | `/doc/insert` | `{"title":"...","text":"..."}` | Embed and store document |
+| `GET` | `/doc/list` | — | List all stored documents |
+| `DELETE` | `/doc/delete/:id` | — | Delete document chunk |
+| `POST` | `/doc/ask` | `{"question":"...","k":3}` | RAG: retrieve + generate |
+| `GET` | `/status` | — | Ollama status and model info |
+
+### Example: Search via curl
+
+```powershell
 curl "http://localhost:8080/search?v=0.9,0.8,0.7,0.6,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1&k=3&metric=cosine&algo=hnsw"
+```
 
-Ask a question (RAG)
-curl -X POST http://localhost:8080/doc/ask \  -H "Content-Type: application/json" \  -d '{"question":"What is dynamic programming?","k":3}'
+### Example: Ask a question via curl
 
-Behavior Notes
+```powershell
+curl -X POST http://localhost:8080/doc/ask `
+  -H "Content-Type: application/json" `
+  -d '{"question":"What is dynamic programming?","k":3}'
+```
 
+---
 
-Core vector search works independently of Ollama
+## Project Structure
 
+```
+myai/
+├── app.py          ← Python backend (HNSW, KD-Tree, BruteForce, REST API, RAG)
+├── index.html      ← Frontend (PCA scatter plot, chat UI, benchmark)
+├── requirements.txt ← Python dependencies (none needed!)
+├── README.md       ← This file
+└── docs/
+    ├── API.md      ← Detailed API documentation
+    └── ARCHITECTURE.md ← Deep dive into algorithms
+```
 
-Document ingestion and RAG require Ollama running locally
+### Architecture (app.py)
 
+```
+BruteForce          O(N·d)      Exact, baseline
+KDTree              O(log N)    Exact, axis-aligned partitioning
+HNSW                O(log N)    Approximate, multilayer small-world graph
 
-Frontend and backend run on the same origin (no separate server needed)
+VectorDB            Unified interface over all 3 (16D demo vectors)
+DocumentDB          HNSW-only index for real Ollama embeddings (768D)
+OllamaClient        HTTP client → /api/embeddings + /api/generate
+```
 
+---
 
+## Algorithm Deep Dive
 
-Troubleshooting
-IssueResolutionPython not foundInstall Python 3.11+ and add to PATHPort 8080 in useChange port in app.pyOllama not respondingRun ollama serveModels missingPull required modelsDocs not workingCheck Ollama status
+### HNSW (Hierarchical Navigable Small World)
 
-Documentation
+Nodes are inserted into a multilayer graph. Each node randomly gets assigned a maximum layer. Layer 0 has all nodes with many connections; higher layers have fewer nodes (exponentially fewer) with longer-range connections.
 
+**Insert:** Start at the top layer, greedily find the nearest node, drop a layer, repeat. At each layer from your assigned max down to 0, run a beam search (ef_construction=200) and connect to the M nearest neighbors bidirectionally.
 
-API: docs/API.md
+**Search:** Same greedy descent from top layer. At layer 0, expand to ef nearest candidates using a priority queue.
 
+**Why it's fast:** The upper layers act like a highway — you quickly get to the right neighborhood, then zoom in at layer 0.
 
-Architecture: docs/ARCHITECTURE.md
+### KD-Tree (K-Dimensional Tree)
 
+Binary space partitioning. Each node splits space along one dimension (cycling through all dimensions). Search prunes entire subtrees when the closest possible point in that subtree can't beat the current best — the "ball within hyperslab" check.
 
+**Weakness:** Degrades with high dimensions (curse of dimensionality). Works well for ≤20D, becomes close to brute force at 768D.
 
-Positioning (important for authenticity)
-This project intentionally avoids heavy frameworks to:
+### Why HNSW Wins at High Dimensions
 
+KD-Tree pruning relies on axis-aligned distance bounds. In high dimensions, almost all the space is near the boundary of the hypersphere — no subtrees get pruned. HNSW's graph-based approach doesn't have this problem.
 
-Keep system behavior transparent
+---
 
+## Common Issues
 
-Make algorithmic comparisons easy
+| Problem | Fix |
+|---|---|
+| `Ollama: OFFLINE` in header | Run `ollama serve` in a separate terminal, or wait 10 seconds for Ollama to start |
+| `ModuleNotFoundError` | Make sure you're running Python 3.11+ and in the correct directory |
+| `Port 8080 already in use` | Kill the process: `netstat -ano \| findstr 8080` then `taskkill /PID <pid> /F` |
+| Embedding takes forever | Ollama is downloading the model on first run, wait 2 min |
+| LLM answer is slow | Normal — llama3.2 takes 10–30s on a laptop CPU. Use llama3.2:1b for faster answers |
 
+### Use a Smaller/Faster LLM
 
-Enable local-first experimentation
+If llama3.2 is too slow on your laptop, switch to the 1B model:
 
+```powershell
+ollama pull llama3.2:1b
+```
 
-It is not intended as a production-scale vector database, but as a clear and extensible reference implementation.
-'''
+Then edit [app.py](app.py) in the `OllamaClient` class and change:
+```python
+self.gen_model = "llama3.2:1b"   # change this
+```
+
+Restart the server.
+
+---
+
+## Why Python?
+
+This project is written in **pure Python** (standard library only) to be:
+
+- **Transparent** — no C extensions to hide algorithm details
+- **Portable** — runs anywhere Python 3.11+ is installed
+- **Educational** — read the code, understand every line
+- **Fast enough** — for learning and small deployments (< 100k vectors)
+
+For production with millions of vectors, use the compiled C++ version or a battle-tested library like `hnswlib`.
+
+---
+
+## License
+
+MIT — use this however you want.
