@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyAI | Python Vector Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4efe8;
+  --surface: rgba(255, 251, 245, 0.92);
+  --surface-strong: #fffdf9;
+  --line: rgba(70, 55, 40, 0.12);
+  --line-strong: rgba(70, 55, 40, 0.22);
+  --text: #1f1a16;
+  --muted: #726659;
+  --accent: #1f7a5c;
+  --accent-soft: rgba(31, 122, 92, 0.10);
+  --accent-line: rgba(31, 122, 92, 0.24);
+  --warm: #b9783d;
+  --danger: #ad4d3d;
+  --danger-soft: rgba(173, 77, 61, 0.10);
+  --shadow: 0 24px 60px rgba(50, 33, 16, 0.08);
+  --radius: 24px;
+  --cs: #2f8f7b;
+  --math: #6f7ac6;
+  --food: #ce7b2f;
+  --sports: #7b8f35;
+  --doc: #1f7a5c;
+  --default: #8f867d;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 30%),
+    linear-gradient(180deg, #fbf8f3 0%, var(--bg) 100%);
+  color: var(--text);
+  font-family: "Manrope", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page {
+  width: min(1400px, calc(100% - 32px));
+  margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.topbar,
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.topbar {
+  border-radius: 28px;
+  padding: 22px 26px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-end;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.brand h1 {
+  font-family: "Fraunces", serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.55;
+}
+
+.statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+
+.tag,
+.mini-stat {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.52);
+  color: var(--muted);
+}
+
+.tag {
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag.online {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.tag.offline {
+  color: var(--danger);
+  border-color: rgba(173, 77, 61, 0.22);
+  background: var(--danger-soft);
+}
+
+.mini-stat {
+  padding: 9px 14px;
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(360px, 0.92fr);
+  gap: 20px;
+}
+
+.card {
+  border-radius: var(--radius);
+}
+
+.canvas-card {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 760px;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.label {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.card-head h2 {
+  font-family: "Fraunces", serif;
+  font-size: 1.65rem;
+}
+
+.helper {
+  max-width: 320px;
+  color: var(--muted);
+  line-height: 1.55;
+  text-align: right;
+}
+
+#scatter {
+  width: 100%;
+  height: 100%;
+  min-height: 620px;
+  border-radius: 20px;
+  border: 1px solid rgba(70, 55, 40, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(247, 240, 231, 0.62));
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  display: inline-block;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.controls-card,
+.tabs-card {
+  padding: 22px;
+}
+
+.controls-card {
+  display: grid;
+  gap: 18px;
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+}
+
+.section-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.field,
+textarea,
+select {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  color: var(--text);
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 4px rgba(31, 122, 92, 0.08);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.6;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.button {
+  border: 0;
+  border-radius: 16px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 18px 30px rgba(31, 122, 92, 0.18);
+}
+
+.button.secondary {
+  background: #efe5d8;
+  color: var(--text);
+}
+
+.button.ghost {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.algo-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.algo-btn {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+  color: var(--muted);
+  padding: 12px 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.algo-btn.on {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.range-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.mini-chart {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  padding: 10px;
+}
+
+#vecCvs {
+  width: 100%;
+  display: block;
+}
+
+.layers {
+  display: grid;
+  gap: 8px;
+}
+
+.layer-row {
+  display: grid;
+  grid-template-columns: 42px 1fr 96px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.layer-row strong {
+  color: var(--accent);
+}
+
+.bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(70, 55, 40, 0.08);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(31, 122, 92, 0.65), rgba(31, 122, 92, 1));
+}
+
+.tabs-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.tab {
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.tab.on {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  gap: 18px;
+  overflow: auto;
+}
+
+.tab-content.on {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-panel,
+.status-box,
+.chat-card,
+.doc-card,
+.result-card {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+}
+
+.metric-panel {
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.latency {
+  font-family: "Fraunces", serif;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.subtle {
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.results,
+.doc-list,
+.chat-history,
+.bench {
+  display: grid;
+  gap: 12px;
+}
+
+.result-card,
+.doc-card,
+.chat-card {
+  padding: 16px;
+}
+
+.rank {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.result-title,
+.doc-title {
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.result-foot,
+.doc-foot {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.delete-btn {
+  width: auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(173, 77, 61, 0.18);
+  background: var(--danger-soft);
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.status-box {
+  padding: 16px;
+  line-height: 1.7;
+}
+
+.status-box.online {
+  border-color: var(--accent-line);
+}
+
+.status-box.offline {
+  border-color: rgba(173, 77, 61, 0.18);
+}
+
+.bench-panel[hidden] {
+  display: none;
+}
+
+.bench-row {
+  display: grid;
+  gap: 6px;
+}
+
+.bench-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.chat-history {
+  min-height: 200px;
+}
+
+.question-card {
+  background: rgba(31, 122, 92, 0.08);
+  border-color: rgba(31, 122, 92, 0.12);
+}
+
+.answer-body {
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.ctx-area {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.ctx-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.ctx-chip {
+  display: inline-block;
+  margin: 4px 6px 0 0;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ctx-expand {
+  display: none;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(244, 239, 232, 0.8);
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(31, 122, 92, 0.18);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.typing::after {
+  content: "|";
+  animation: blink 0.9s step-end infinite;
+}
+
+#tip {
+  position: fixed;
+  display: none;
+  max-width: 260px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 249, 0.95);
+  color: var(--text);
+  box-shadow: 0 18px 35px rgba(50, 33, 16, 0.12);
+  line-height: 1.5;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(70, 55, 40, 0.18);
+  border-radius: 999px;
+}
+
+@media (max-width: 1120px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .helper {
+    text-align: left;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .statusbar {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    width: min(100% - 20px, 100%);
+    margin: 10px auto 20px;
+  }
+
+  .topbar,
+  .controls-card,
+  .tabs-card,
+  .canvas-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .button-row {
+    grid-template-columns: 1fr;
+  }
+
+  .algo-row,
+  .tabs {
+    grid-template-columns: 1fr;
+  }
+
+  #scatter {
+    min-height: 420px;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="eyebrow">Python semantic search workspace</div>
+        <h1>MyAI</h1>
+        <p class="subtitle">
+          A minimal web front end for HNSW, KD-Tree, brute force search, document embeddings, and local RAG with Ollama.
+        </p>
+      </div>
+      <div class="statusbar">
+        <span class="tag">HNSW</span>
+        <span class="tag">KD-Tree</span>
+        <span class="tag">Brute Force</span>
+        <span class="tag" id="ollamaBadge">Ollama ...</span>
+        <span class="mini-stat" id="statsLabel">Loading...</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card canvas-card">
+        <div class="card-head">
+          <div>
+            <div class="label">Map</div>
+            <h2>Semantic projection</h2>
+          </div>
+          <p class="helper">
+            The canvas shows a PCA projection of the 16D demo vectors and highlights matches for search and retrieval.
+          </p>
+        </div>
+        <canvas id="scatter"></canvas>
+        <div class="legend">
+          <span><i class="swatch" style="--swatch: var(--cs)"></i>Computer science</span>
+          <span><i class="swatch" style="--swatch: var(--math)"></i>Mathematics</span>
+          <span><i class="swatch" style="--swatch: var(--food)"></i>Food</span>
+          <span><i class="swatch" style="--swatch: var(--sports)"></i>Sports</span>
+          <span><i class="swatch" style="--swatch: var(--doc)"></i>Documents</span>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="card controls-card">
+          <div class="section">
+            <div class="section-top">
+              <div class="section-title">Query</div>
+              <div class="subtle">Search the 16D demo space</div>
+            </div>
+            <input class="field" id="qInput" type="text" placeholder="binary tree, sushi, basketball...">
+            <div class="button-row">
+              <button class="button primary" onclick="runSearch()">Search</button>
+              <button class="button secondary" onclick="runBenchmark()">Benchmark</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Algorithm</div>
+            <div class="algo-row">
+              <button class="algo-btn on" data-algo="hnsw" onclick="setAlgo(this)">HNSW</button>
+              <button class="algo-btn" data-algo="kdtree" onclick="setAlgo(this)">KD-Tree</button>
+              <button class="algo-btn" data-algo="bruteforce" onclick="setAlgo(this)">Brute</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Distance metric</div>
+            <select id="metric">
+              <option value="cosine">Cosine similarity</option>
+              <option value="euclidean">Euclidean distance</option>
+              <option value="manhattan">Manhattan distance</option>
+            </select>
+          </div>
+
+          <div class="section">
+            <div class="section-top">
+              <div class="section-title">Top K</div>
+              <div class="subtle" id="kLabel">5</div>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="kSlider" min="1" max="10" value="5" oninput="document.getElementById('kLabel').textContent = this.value">
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-top">
+              <div class="section-title">Insert demo vector</div>
+              <div class="subtle">Adds a 16D proxy point</div>
+            </div>
+            <input class="field" id="addMeta" type="text" placeholder="Description...">
+            <select id="addCat">
+              <option value="cs">Computer science</option>
+              <option value="math">Mathematics</option>
+              <option value="food">Food</option>
+              <option value="sports">Sports</option>
+            </select>
+            <button class="button ghost" onclick="addVector()">Insert vector</button>
+          </div>
+
+          <div class="section">
+            <div class="section-top">
+              <div class="section-title">Query profile</div>
+              <div class="subtle">16D keyword projection</div>
+            </div>
+            <div class="mini-chart">
+              <canvas id="vecCvs" height="82"></canvas>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-top">
+              <div class="section-title">HNSW layers</div>
+              <div class="subtle">Graph summary</div>
+            </div>
+            <div class="layers" id="layers"></div>
+          </div>
+        </section>
+
+        <section class="card tabs-card">
+          <div class="tabs">
+            <div class="tab on" onclick="switchTab('search')">Search</div>
+            <div class="tab" onclick="switchTab('docs')">Documents</div>
+            <div class="tab" onclick="switchTab('rag')">Ask AI</div>
+          </div>
+
+          <div class="tab-content on" id="tab-search">
+            <div class="metric-panel">
+              <div class="label">Latency</div>
+              <div class="latency" id="latBig">-</div>
+              <div class="subtle" id="latSub">Run a query to see timings.</div>
+            </div>
+
+            <div class="bench-panel" id="benchSec" hidden>
+              <div class="label">Benchmark</div>
+              <div class="bench" id="benchBars"></div>
+            </div>
+
+            <div>
+              <div class="label">Results</div>
+              <div class="results" id="results">
+                <div class="subtle">Search results will appear here.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-docs">
+            <div class="status-box" id="ollamaStatus">
+              Checking Ollama status...
+            </div>
+
+            <div class="section">
+              <div class="section-top">
+                <div class="section-title">Add document</div>
+                <div class="subtle" id="insertStatus">Ollama will create embeddings.</div>
+              </div>
+              <input class="field" id="docTitle" type="text" placeholder="Document title">
+              <textarea id="docText" placeholder="Paste notes, article text, or reference content..."></textarea>
+              <button class="button primary" id="insertDocBtn" onclick="insertDocument()">Embed and insert</button>
+            </div>
+
+            <div>
+              <div class="section-top">
+                <div class="section-title">Stored chunks</div>
+                <div class="subtle"><span id="docCountLabel">0</span> chunks</div>
+              </div>
+              <div class="doc-list" id="docList">
+                <div class="subtle">No documents yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-rag">
+            <div class="section">
+              <div class="section-top">
+                <div class="section-title">Question</div>
+                <div class="subtle">Ctrl + Enter also works</div>
+              </div>
+              <textarea id="ragQuestion" placeholder="Ask a question about the stored documents..."></textarea>
+              <div class="button-row">
+                <select id="ragK">
+                  <option value="2">Top 2 chunks</option>
+                  <option value="3" selected>Top 3 chunks</option>
+                  <option value="4">Top 4 chunks</option>
+                  <option value="5">Top 5 chunks</option>
+                </select>
+                <button class="button primary" id="askBtn" onclick="askAI()">Ask AI</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="label">Conversation</div>
+              <div class="chat-history" id="chatHistory">
+                <div class="subtle">Ask about your inserted documents to run retrieval and generation.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="tip"></div>
+
+<script>
+const API = window.location.origin;
+const DIMS = 16;
+const COL = {
+  cs: "#2f8f7b",
+  math: "#6f7ac6",
+  food: "#ce7b2f",
+  sports: "#7b8f35",
+  doc: "#1f7a5c",
+  default: "#8f867d"
+};
+const DIM_COL = [
+  "#2f8f7b", "#2f8f7b", "#2f8f7b", "#2f8f7b",
+  "#6f7ac6", "#6f7ac6", "#6f7ac6", "#6f7ac6",
+  "#ce7b2f", "#ce7b2f", "#ce7b2f", "#ce7b2f",
+  "#7b8f35", "#7b8f35", "#7b8f35", "#7b8f35"
+];
+
+let allItems = [];
+let pcaPoints = [];
+let hitIds = new Set();
+let queryPt = null;
+let hoverItem = null;
+let pulse = 0;
+let selAlgo = "hnsw";
+let searchResults = [];
+let bounds = { minX: -1, maxX: 1, minY: -1, maxY: 1 };
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((tab, index) => {
+    const names = ["search", "docs", "rag"];
+    tab.classList.toggle("on", names[index] === name);
+  });
+  document.querySelectorAll(".tab-content").forEach((panel) => panel.classList.remove("on"));
+  document.getElementById("tab-" + name).classList.add("on");
+  if (name === "docs") {
+    loadDocList();
+  }
+}
+
+const KW = {
+  cs: ["algorithm", "data", "tree", "graph", "array", "linked", "hash", "stack", "queue", "sort", "binary", "dynamic", "programming", "recursion", "complexity", "pointer", "node", "search", "insert", "bfs", "dfs", "heap", "trie"],
+  math: ["calculus", "matrix", "probability", "theorem", "integral", "derivative", "linear", "algebra", "equation", "function", "prime", "modular", "combinatorics", "permutation", "eigenvalue", "statistics", "proof"],
+  food: ["food", "pizza", "sushi", "ramen", "pasta", "recipe", "cook", "eat", "restaurant", "dish", "ingredient", "flavor", "spice", "noodle", "bread", "croissant", "taco", "fish", "rice", "soup"],
+  sports: ["sport", "basketball", "football", "tennis", "chess", "swim", "game", "play", "score", "team", "athlete", "competition", "match", "tournament", "olympic", "dribble", "tackle", "serve"]
+};
+
+function textToEmbedding(text) {
+  const lowered = text.toLowerCase();
+  const words = lowered.split(/\s+/);
+  const score = { cs: 0, math: 0, food: 0, sports: 0 };
+  for (const word of words) {
+    for (const [category, keywords] of Object.entries(KW)) {
+      for (const keyword of keywords) {
+        if (word.includes(keyword) || keyword.startsWith(word)) {
+          score[category] += 0.35;
+          break;
+        }
+      }
+    }
+  }
+  const maxScore = Math.max(...Object.values(score), 0.01);
+  const normalize = (value) => Math.min((value / maxScore) * 0.88, 0.94);
+  const jitter = () => (Math.random() - 0.5) * 0.04;
+  const emb = new Array(16).fill(0.08);
+  const fill = (index, value) => {
+    if (value < 0.01) return;
+    const base = normalize(value);
+    emb[index] = Math.max(0.05, base + jitter());
+    emb[index + 1] = Math.max(0.05, base + jitter());
+    emb[index + 2] = Math.max(0.05, base * 0.92 + jitter());
+    emb[index + 3] = Math.max(0.05, base * 0.87 + jitter());
+  };
+  fill(0, score.cs);
+  fill(4, score.math);
+  fill(8, score.food);
+  fill(12, score.sports);
+  return emb;
+}
+
+function pca2D(embs) {
+  const n = embs.length;
+  const d = embs[0].length;
+  if (n < 2) return embs.map(() => [0, 0]);
+
+  const mean = new Array(d).fill(0);
+  for (const emb of embs) {
+    for (let i = 0; i < d; i += 1) {
+      mean[i] += emb[i] / n;
+    }
+  }
+
+  const centered = embs.map((emb) => emb.map((value, index) => value - mean[index]));
+
+  function powerIter(data, excluded) {
+    let vec = new Array(d).fill(0).map(() => Math.random() - 0.5);
+    if (excluded) {
+      const dot = vec.reduce((sum, value, index) => sum + value * excluded[index], 0);
+      vec = vec.map((value, index) => value - dot * excluded[index]);
+    }
+    let norm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0));
+    vec = vec.map((value) => value / norm);
+
+    for (let iter = 0; iter < 200; iter += 1) {
+      const projections = data.map((row) => row.reduce((sum, value, index) => sum + value * vec[index], 0));
+      const next = new Array(d).fill(0);
+      for (let rowIndex = 0; rowIndex < n; rowIndex += 1) {
+        for (let colIndex = 0; colIndex < d; colIndex += 1) {
+          next[colIndex] += data[rowIndex][colIndex] * projections[rowIndex];
+        }
+      }
+      if (excluded) {
+        const dot = next.reduce((sum, value, index) => sum + value * excluded[index], 0);
+        for (let i = 0; i < d; i += 1) {
+          next[i] -= dot * excluded[i];
+        }
+      }
+      norm = Math.sqrt(next.reduce((sum, value) => sum + value * value, 0));
+      if (norm < 1e-10) break;
+      const previous = vec.slice();
+      vec = next.map((value) => value / norm);
+      const drift = vec.reduce((sum, value, index) => sum + (value - previous[index]) ** 2, 0);
+      if (drift < 1e-12) break;
+    }
+    return vec;
+  }
+
+  const pc1 = powerIter(centered, null);
+  const pc2 = powerIter(centered, pc1);
+  return centered.map((row) => [
+    row.reduce((sum, value, index) => sum + value * pc1[index], 0),
+    row.reduce((sum, value, index) => sum + value * pc2[index], 0)
+  ]);
+}
+
+const sc = document.getElementById("scatter");
+const ctx = sc.getContext("2d");
+
+function resize() {
+  const rect = sc.parentElement.getBoundingClientRect();
+  sc.width = rect.width;
+  sc.height = Math.max(420, rect.height);
+}
+
+window.addEventListener("resize", resize);
+
+function w2c(wx, wy) {
+  const padding = 72;
+  const width = sc.width;
+  const height = sc.height;
+  const rx = bounds.maxX - bounds.minX || 1;
+  const ry = bounds.maxY - bounds.minY || 1;
+  return [
+    padding + ((wx - bounds.minX) / rx) * (width - padding * 2),
+    height - padding - ((wy - bounds.minY) / ry) * (height - padding * 2)
+  ];
+}
+
+function drawFrame() {
+  ctx.clearRect(0, 0, sc.width, sc.height);
+
+  const bg = ctx.createLinearGradient(0, 0, 0, sc.height);
+  bg.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+  bg.addColorStop(1, "rgba(246, 239, 230, 0.92)");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, sc.width, sc.height);
+
+  ctx.strokeStyle = "rgba(70, 55, 40, 0.08)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 8; i += 1) {
+    const tx = 72 + (i / 8) * (sc.width - 144);
+    const ty = 72 + (i / 8) * (sc.height - 144);
+    ctx.beginPath();
+    ctx.moveTo(tx, 72);
+    ctx.lineTo(tx, sc.height - 72);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(72, ty);
+    ctx.lineTo(sc.width - 72, ty);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(114, 102, 89, 0.75)";
+  ctx.font = "12px Manrope";
+  ctx.fillText("PC1", sc.width / 2 - 10, sc.height - 22);
+  ctx.save();
+  ctx.translate(28, sc.height / 2 + 20);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("PC2", 0, 0);
+  ctx.restore();
+  ctx.font = "600 13px Manrope";
+  ctx.fillText("MyAI semantic space", 80, 30);
+
+  if (queryPt && hitIds.size > 0) {
+    const [qx, qy] = w2c(queryPt.x, queryPt.y);
+    for (const point of pcaPoints) {
+      if (!hitIds.has(point.item.id)) continue;
+      const [px, py] = w2c(point.x, point.y);
+      ctx.strokeStyle = "rgba(31, 122, 92, 0.14)";
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(qx, qy);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  for (const point of pcaPoints) {
+    const [cx, cy] = w2c(point.x, point.y);
+    const color = COL[point.item.category] || COL.default;
+    const isHit = hitIds.has(point.item.id);
+    const radius = isHit ? 9 : 6;
+
+    if (isHit) {
+      const pulseRadius = radius + 7 + Math.sin(pulse) * 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = color + "35";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 4);
+    glow.addColorStop(0, color + (isHit ? "aa" : "77"));
+    glow.addColorStop(1, "transparent");
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 4, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    if (hoverItem && hoverItem.id === point.item.id) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  if (queryPt) {
+    const [qx, qy] = w2c(queryPt.x, queryPt.y);
+    ctx.save();
+    ctx.translate(qx, qy);
+    ctx.shadowColor = "rgba(31, 122, 92, 0.35)";
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i += 1) {
+      const angle = (i * Math.PI / 5) - Math.PI / 2;
+      const radius = i % 2 === 0 ? 13 : 5;
+      if (i === 0) {
+        ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      } else {
+        ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      }
+    }
+    ctx.closePath();
+    ctx.fillStyle = "#1f7a5c";
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = "rgba(31, 122, 92, 0.85)";
+    ctx.font = "12px Manrope";
+    ctx.fillText("query", qx + 15, qy + 4);
+  }
+
+  if (!pcaPoints.length) {
+    ctx.fillStyle = "rgba(114, 102, 89, 0.75)";
+    ctx.font = "13px Manrope";
+    ctx.textAlign = "center";
+    ctx.fillText("Connecting to MyAI...", sc.width / 2, sc.height / 2);
+    ctx.textAlign = "left";
+  }
+
+  pulse += 0.05;
+  requestAnimationFrame(drawFrame);
+}
+
+sc.addEventListener("mousemove", (event) => {
+  const rect = sc.getBoundingClientRect();
+  const mx = event.clientX - rect.left;
+  const my = event.clientY - rect.top;
+  hoverItem = null;
+  let best = 18;
+  for (const point of pcaPoints) {
+    const [cx, cy] = w2c(point.x, point.y);
+    const distance = Math.hypot(mx - cx, my - cy);
+    if (distance < best) {
+      best = distance;
+      hoverItem = point.item;
+    }
+  }
+
+  const tip = document.getElementById("tip");
+  if (hoverItem) {
+    const color = COL[hoverItem.category] || COL.default;
+    tip.style.display = "block";
+    tip.style.left = event.clientX + 14 + "px";
+    tip.style.top = event.clientY - 8 + "px";
+    tip.innerHTML = `<span style="color:${color};font-weight:700">${hoverItem.category.toUpperCase()}</span><br>${hoverItem.metadata}`;
+  } else {
+    tip.style.display = "none";
+  }
+});
+
+sc.addEventListener("mouseleave", () => {
+  hoverItem = null;
+  document.getElementById("tip").style.display = "none";
+});
+
+async function loadItems() {
+  try {
+    const response = await fetch(API + "/items");
+    allItems = await response.json();
+    if (allItems.length >= 2) {
+      const coords = pca2D(allItems.map((item) => item.embedding));
+      pcaPoints = allItems.map((item, index) => ({ x: coords[index][0], y: coords[index][1], item }));
+      let x0 = Infinity;
+      let x1 = -Infinity;
+      let y0 = Infinity;
+      let y1 = -Infinity;
+      for (const point of pcaPoints) {
+        x0 = Math.min(x0, point.x);
+        x1 = Math.max(x1, point.x);
+        y0 = Math.min(y0, point.y);
+        y1 = Math.max(y1, point.y);
+      }
+      const padX = (x1 - x0) * 0.18 || 0.1;
+      const padY = (y1 - y0) * 0.18 || 0.1;
+      bounds = { minX: x0 - padX, maxX: x1 + padX, minY: y0 - padY, maxY: y1 + padY };
+    }
+    document.getElementById("statsLabel").textContent = `${allItems.length} vectors | ${DIMS} dims`;
+  } catch (_) {
+    document.getElementById("statsLabel").textContent = "Server offline";
+  }
+}
+
+function setAlgo(element) {
+  document.querySelectorAll(".algo-btn").forEach((button) => button.classList.remove("on"));
+  element.classList.add("on");
+  selAlgo = element.dataset.algo;
+}
+
+async function runSearch() {
+  const text = document.getElementById("qInput").value.trim();
+  if (!text) return;
+  const emb = textToEmbedding(text);
+  const k = parseInt(document.getElementById("kSlider").value, 10);
+  const metric = document.getElementById("metric").value;
+  const url = `${API}/search?v=${emb.join(",")}&k=${k}&metric=${metric}&algo=${selAlgo}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    searchResults = data.results || [];
+    hitIds = new Set(searchResults.map((item) => item.id));
+    const latency = data.latencyUs || 0;
+    document.getElementById("latBig").textContent = latency < 1000 ? `${latency} us` : `${(latency / 1000).toFixed(2)} ms`;
+    document.getElementById("latSub").textContent = `${selAlgo.toUpperCase()} | ${metric} | k=${k}`;
+
+    if (searchResults.length > 0) {
+      let sx = 0;
+      let sy = 0;
+      let weightSum = 0;
+      for (let i = 0; i < Math.min(3, searchResults.length); i += 1) {
+        const point = pcaPoints.find((entry) => entry.item.id === searchResults[i].id);
+        if (point) {
+          const weight = 1 / (i + 1);
+          sx += point.x * weight;
+          sy += point.y * weight;
+          weightSum += weight;
+        }
+      }
+      if (weightSum > 0) {
+        queryPt = {
+          x: sx / weightSum + (Math.random() - 0.5) * 0.015,
+          y: sy / weightSum + (Math.random() - 0.5) * 0.015
+        };
+      }
+    }
+
+    renderResults(searchResults);
+    drawVecChart(emb);
+  } catch (_) {
+    document.getElementById("latSub").textContent = "Cannot reach the backend on port 8080.";
+  }
+}
+
+document.getElementById("qInput").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") runSearch();
+});
+
+function renderResults(results) {
+  const target = document.getElementById("results");
+  if (!results || !results.length) {
+    target.innerHTML = `<div class="subtle">No results yet.</div>`;
+    return;
+  }
+
+  target.innerHTML = results.map((result, index) => {
+    const color = COL[result.category] || COL.default;
+    return `
+      <div class="result-card" onmouseenter="hoverItem={id:${result.id}}" onmouseleave="hoverItem=null">
+        <div class="rank">Result ${index + 1}</div>
+        <div class="result-title">${result.metadata}</div>
+        <div class="result-foot">
+          <span class="chip" style="background:${color}15;color:${color};border:1px solid ${color}33">${result.category.toUpperCase()}</span>
+          <span class="subtle">dist ${result.distance.toFixed(5)}</span>
+          <button class="delete-btn" onclick="deleteItem(${result.id})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function drawVecChart(emb) {
+  const canvas = document.getElementById("vecCvs");
+  const width = canvas.parentElement.clientWidth - 20;
+  canvas.width = width;
+  const vx = canvas.getContext("2d");
+  vx.clearRect(0, 0, width, 82);
+  vx.fillStyle = "rgba(255,255,255,0)";
+  vx.fillRect(0, 0, width, 82);
+  const barWidth = (width - 4) / DIMS;
+  for (let i = 0; i < DIMS; i += 1) {
+    const height = emb[i] * 60;
+    const x = 2 + i * barWidth;
+    const color = DIM_COL[i];
+    vx.fillStyle = color + "bb";
+    vx.fillRect(x + 1, 66 - height, barWidth - 3, height);
+  }
+  vx.font = "10px Manrope";
+  vx.fillStyle = "rgba(114,102,89,0.85)";
+  vx.fillText("CS", 4, 78);
+  vx.fillText("Math", width * 0.27, 78);
+  vx.fillText("Food", width * 0.53, 78);
+  vx.fillText("Sports", width * 0.78, 78);
+}
+
+async function runBenchmark() {
+  const text = document.getElementById("qInput").value.trim() || "binary tree algorithm";
+  const emb = textToEmbedding(text);
+  const metric = document.getElementById("metric").value;
+  try {
+    const response = await fetch(`${API}/benchmark?v=${emb.join(",")}&k=5&metric=${metric}`);
+    const data = await response.json();
+    document.getElementById("benchSec").hidden = false;
+    const maxValue = Math.max(data.bruteforceUs, data.kdtreeUs, data.hnswUs, 1);
+    document.getElementById("benchBars").innerHTML = [
+      { label: "Brute force", value: data.bruteforceUs, color: "#ad4d3d" },
+      { label: "KD-Tree", value: data.kdtreeUs, color: "#6f7ac6" },
+      { label: "HNSW", value: data.hnswUs, color: "#1f7a5c" }
+    ].map((entry) => {
+      const width = Math.max((entry.value / maxValue) * 100, 2);
+      const display = entry.value < 1000 ? `${entry.value} us` : `${(entry.value / 1000).toFixed(2)} ms`;
+      return `
+        <div class="bench-row">
+          <div class="bench-label">
+            <span style="color:${entry.color};font-weight:700">${entry.label}</span>
+            <span class="subtle">${display}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${width}%;background:${entry.color}"></div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (_) {
+    document.getElementById("benchSec").hidden = true;
+  }
+}
+
+async function loadHNSW() {
+  try {
+    const response = await fetch(API + "/hnsw-info");
+    const data = await response.json();
+    const maxNodes = data.nodesPerLayer[0] || 1;
+    const target = document.getElementById("layers");
+    if (!data.nodesPerLayer.length) {
+      target.innerHTML = `<div class="subtle">Graph is empty.</div>`;
+      return;
+    }
+
+    target.innerHTML = data.nodesPerLayer.map((count, layer) => {
+      const width = Math.max((count / maxNodes) * 100, 2);
+      const edges = data.edgesPerLayer[layer] || 0;
+      return `
+        <div class="layer-row">
+          <strong>L${layer}</strong>
+          <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+          <span>${count}n | ${edges}e</span>
+        </div>
+      `;
+    }).join("");
+  } catch (_) {
+    document.getElementById("layers").innerHTML = `<div class="subtle">Layer data unavailable.</div>`;
+  }
+}
+
+async function addVector() {
+  const metadata = document.getElementById("addMeta").value.trim();
+  const category = document.getElementById("addCat").value;
+  if (!metadata) return;
+  const emb = textToEmbedding(`${metadata} ${category}`);
+
+  try {
+    await fetch(API + "/insert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ metadata, category, embedding: emb })
+    });
+    document.getElementById("addMeta").value = "";
+    await loadItems();
+    loadHNSW();
+  } catch (_) {
+    // no-op
+  }
+}
+
+async function deleteItem(id) {
+  try {
+    await fetch(`${API}/delete/${id}`, { method: "DELETE" });
+    searchResults = searchResults.filter((result) => result.id !== id);
+    hitIds.delete(id);
+    renderResults(searchResults);
+    await loadItems();
+    loadHNSW();
+  } catch (_) {
+    // no-op
+  }
+}
+
+async function checkOllamaStatus() {
+  try {
+    const response = await fetch(API + "/status");
+    const data = await response.json();
+    const badge = document.getElementById("ollamaBadge");
+    const box = document.getElementById("ollamaStatus");
+
+    if (data.ollamaAvailable) {
+      badge.className = "tag online";
+      badge.textContent = "Ollama online";
+      box.className = "status-box online";
+      box.innerHTML = `
+        <strong style="color:var(--accent)">Ollama is online</strong><br>
+        Embed model: ${data.embedModel}<br>
+        Generate model: ${data.genModel}<br>
+        Document dims: ${data.docDims || "(set after first insert)"}<br>
+        Stored chunks: ${data.docCount}
+      `;
+    } else {
+      badge.className = "tag offline";
+      badge.textContent = "Ollama offline";
+      box.className = "status-box offline";
+      box.innerHTML = `
+        <strong style="color:var(--danger)">Ollama is offline</strong><br><br>
+        To enable document search and generation:<br>
+        1. Install Ollama from ollama.com<br>
+        2. Run <code>ollama pull nomic-embed-text</code><br>
+        3. Run <code>ollama pull llama3.2</code>
+      `;
+    }
+  } catch (_) {
+    document.getElementById("ollamaBadge").className = "tag offline";
+    document.getElementById("ollamaBadge").textContent = "Server offline";
+  }
+}
+
+async function insertDocument() {
+  const title = document.getElementById("docTitle").value.trim();
+  const text = document.getElementById("docText").value.trim();
+  const button = document.getElementById("insertDocBtn");
+  const status = document.getElementById("insertStatus");
+  if (!title || !text) {
+    status.textContent = "Need both a title and text.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Embedding...";
+  status.textContent = "Calling Ollama for embeddings...";
+
+  try {
+    const response = await fetch(API + "/doc/insert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, text })
+    });
+    const data = await response.json();
+    if (data.error) {
+      status.textContent = data.error;
+    } else {
+      status.textContent = `Inserted ${data.chunks} chunk(s) with ${data.dims}D embeddings.`;
+      document.getElementById("docTitle").value = "";
+      document.getElementById("docText").value = "";
+
+      const emb16 = textToEmbedding(`${title} ${text}`);
+      fetch(API + "/insert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ metadata: title, category: "doc", embedding: emb16 })
+      }).then(() => loadItems().then(loadHNSW));
+
+      loadDocList();
+      checkOllamaStatus();
+    }
+  } catch (_) {
+    status.textContent = "Server error while inserting the document.";
+  }
+
+  button.disabled = false;
+  button.textContent = "Embed and insert";
+}
+
+async function loadDocList() {
+  try {
+    const response = await fetch(API + "/doc/list");
+    const docs = await response.json();
+    document.getElementById("docCountLabel").textContent = docs.length;
+    if (!docs.length) {
+      document.getElementById("docList").innerHTML = `<div class="subtle">No documents yet.</div>`;
+      return;
+    }
+    document.getElementById("docList").innerHTML = docs.map((doc) => `
+      <div class="doc-card">
+        <div class="doc-title">${doc.title}</div>
+        <div class="subtle">${doc.preview}</div>
+        <div class="doc-foot">
+          <span class="subtle">${doc.words} words</span>
+          <button class="delete-btn" onclick="deleteDoc(${doc.id})">Delete</button>
+        </div>
+      </div>
+    `).join("");
+  } catch (_) {
+    document.getElementById("docList").innerHTML = `<div class="subtle">Document list unavailable.</div>`;
+  }
+}
+
+async function deleteDoc(id) {
+  try {
+    await fetch(`${API}/doc/delete/${id}`, { method: "DELETE" });
+    loadDocList();
+    checkOllamaStatus();
+  } catch (_) {
+    // no-op
+  }
+}
+
+document.getElementById("ragQuestion").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.ctrlKey) askAI();
+});
+
+async function askAI() {
+  const question = document.getElementById("ragQuestion").value.trim();
+  if (!question) return;
+  const k = parseInt(document.getElementById("ragK").value, 10);
+  const button = document.getElementById("askBtn");
+  button.disabled = true;
+  button.textContent = "Thinking...";
+
+  const historyEl = document.getElementById("chatHistory");
+  historyEl.innerHTML = "";
+
+  const questionCard = document.createElement("div");
+  questionCard.className = "chat-card question-card";
+  questionCard.textContent = question;
+  historyEl.appendChild(questionCard);
+
+  const thinking = document.createElement("div");
+  thinking.className = "thinking";
+  thinking.innerHTML = `<div class="spinner"></div>Retrieving context and generating an answer...`;
+  historyEl.appendChild(thinking);
+  historyEl.scrollTop = historyEl.scrollHeight;
+
+  fetch(API + "/doc/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, k })
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.contexts && data.contexts.length > 0) {
+        hitIds = new Set();
+        let sx = 0;
+        let sy = 0;
+        let weightSum = 0;
+        data.contexts.forEach((ctx, index) => {
+          const point = pcaPoints.find((entry) => entry.item.category === "doc" && ctx.title.startsWith(entry.item.metadata));
+          if (point) {
+            hitIds.add(point.item.id);
+            const weight = 1 / (index + 1);
+            sx += point.x * weight;
+            sy += point.y * weight;
+            weightSum += weight;
+          }
+        });
+        if (weightSum > 0) {
+          queryPt = {
+            x: sx / weightSum + (Math.random() - 0.5) * 0.015,
+            y: sy / weightSum + (Math.random() - 0.5) * 0.015
+          };
+        }
+      } else {
+        hitIds = new Set();
+        const emb16 = textToEmbedding(question);
+        fetch(`${API}/search?v=${emb16.join(",")}&k=3&metric=cosine&algo=hnsw`)
+          .then((response) => response.json())
+          .then((data2) => {
+            if (data2.results && data2.results.length > 0) {
+              let sx = 0;
+              let sy = 0;
+              let weightSum = 0;
+              for (let i = 0; i < Math.min(3, data2.results.length); i += 1) {
+                const point = pcaPoints.find((entry) => entry.item.id === data2.results[i].id);
+                if (point) {
+                  const weight = 1 / (i + 1);
+                  sx += point.x * weight;
+                  sy += point.y * weight;
+                  weightSum += weight;
+                }
+              }
+              if (weightSum > 0) {
+                queryPt = {
+                  x: sx / weightSum + (Math.random() - 0.5) * 0.015,
+                  y: sy / weightSum + (Math.random() - 0.5) * 0.015
+                };
+              }
+            }
+          }).catch(() => {});
+      }
+    }).catch(() => {});
+
+  try {
+    const response = await fetch(API + "/doc/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, k })
+    });
+    const data = await response.json();
+    thinking.remove();
+
+    const answerCard = document.createElement("div");
+    answerCard.className = "chat-card";
+
+    if (data.error) {
+      answerCard.innerHTML = `<div class="label">Error</div><div class="answer-body" style="color:var(--danger)">${data.error}</div>`;
+      historyEl.appendChild(answerCard);
+    } else {
+      answerCard.innerHTML = `
+        <div class="label">${data.model || "llm"}</div>
+        <div class="answer-body typing" id="typeTarget"></div>
+        <div class="ctx-area">
+          <div class="ctx-label">Retrieved context (${data.contexts.length} chunks)</div>
+          ${data.contexts.map((ctx, index) => `
+            <span class="ctx-chip" onclick="toggleCtx(${index})">#${index + 1} ${ctx.title} | ${ctx.distance.toFixed(3)}</span>
+            <div class="ctx-expand" id="ctx-${index}">${ctx.text}</div>
+          `).join("")}
+        </div>
+      `;
+      historyEl.appendChild(answerCard);
+
+      const target = answerCard.querySelector("#typeTarget");
+      const full = data.answer || "";
+      let index = 0;
+      const timer = setInterval(() => {
+        if (index >= full.length) {
+          clearInterval(timer);
+          target.classList.remove("typing");
+          return;
+        }
+        target.textContent += full.slice(index, index + 3);
+        index += 3;
+        historyEl.scrollTop = historyEl.scrollHeight;
+      }, 18);
+    }
+  } catch (_) {
+    thinking.remove();
+    const errorCard = document.createElement("div");
+    errorCard.className = "chat-card";
+    errorCard.innerHTML = `<div class="label">Error</div><div class="answer-body" style="color:var(--danger)">Server error while asking the backend.</div>`;
+    historyEl.appendChild(errorCard);
+  }
+
+  document.getElementById("ragQuestion").value = "";
+  button.disabled = false;
+  button.textContent = "Ask AI";
+  historyEl.scrollTop = historyEl.scrollHeight;
+}
+
+function toggleCtx(index) {
+  const element = document.getElementById("ctx-" + index);
+  element.style.display = element.style.display === "block" ? "none" : "block";
+}
+
+resize();
+drawFrame();
+drawVecChart(new Array(16).fill(0.08));
+loadItems().then(loadHNSW);
+checkOllamaStatus();
+</script>
+</body>
+</html>
