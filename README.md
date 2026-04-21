@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 MyAI
 MyAI is a lightweight vector search and retrieval system built in Python. It combines classical nearest neighbor algorithms with modern embedding-based retrieval, all exposed through a simple web interface and REST API.
 The project is designed to be minimal, transparent, and easy to experiment with — no heavy dependencies, no hidden abstractions.
@@ -143,3 +144,7 @@ Enable local-first experimentation
 
 It is not intended as a production-scale vector database, but as a clear and extensible reference implementation.
 
+=======
+# my-VDB
+VectorDB — Build a Vector Database from Scratch 
+>>>>>>> 1043f2a1ff9c6cc1cd7c3b6b4f7e2fccea0c9878
